@@ -119,11 +119,16 @@ class DescribedFeatureOverlay extends StatefulWidget {
   ///
   /// The default value for [barrierDismissible] is `true`.
   final bool barrierDismissible;
+  
+  /// Controls whether to use the default Material Button with circle border or
+  /// the custom tap target supplied if this is not null.
+  final Widget customTapTarget;
 
   const DescribedFeatureOverlay({
     Key key,
     @required this.featureId,
-    @required this.tapTarget,
+    this.tapTarget,
+    this.customTapTarget,
     this.backgroundColor,
     this.targetColor = Colors.white,
     this.textColor = Colors.white,
@@ -143,7 +148,7 @@ class DescribedFeatureOverlay extends StatefulWidget {
     this.dismissDuration = const Duration(milliseconds: 250),
     this.barrierDismissible = true,
   })  : assert(featureId != null),
-        assert(tapTarget != null),
+        assert(tapTarget != null || customTapTarget != null),
         assert(child != null),
         assert(contentLocation != null),
         assert(enablePulsingAnimation != null),
@@ -452,6 +457,8 @@ class _DescribedFeatureOverlayState extends State<DescribedFeatureOverlay>
   bool _isOnTopHalfOfScreen(Offset position) =>
       position.dy < (_screenSize.height / 2.0);
 
+  bool _isCloseToLeftOrRight(Offset position) => position.dx != _screenSize.width / 2;
+  
   bool _isOnLeftHalfOfScreen(Offset position) =>
       position.dx < (_screenSize.width / 2.0);
 
@@ -474,15 +481,24 @@ class _DescribedFeatureOverlayState extends State<DescribedFeatureOverlay>
       final startingBackgroundPosition = anchor;
 
       Offset endingBackgroundPosition;
+      
+      double horizontalOffset;
+
+      if (!_isCloseToLeftOrRight(anchor)) {
+        horizontalOffset = 0;
+      } else {
+        horizontalOffset = _isOnLeftHalfOfScreen(anchor) ? 20.0 : 20.0;
+      }
+      
       switch (contentLocation) {
         case ContentLocation.above:
           endingBackgroundPosition = Offset(
-              width / 2.0 + (_isOnLeftHalfOfScreen(anchor) ? -20.0 : 20.0),
+              width / 2.0 + horizontalOffset,
               anchor.dy - (width / 2.0) + 40.0);
           break;
         case ContentLocation.below:
           endingBackgroundPosition = Offset(
-              width / 2.0 + (_isOnLeftHalfOfScreen(anchor) ? -20.0 : 20.0),
+              width / 2.0 + horizontalOffset,
               anchor.dy + (width / 2.0) - 40.0);
           break;
         case ContentLocation.trivial:
@@ -670,6 +686,7 @@ class _DescribedFeatureOverlayState extends State<DescribedFeatureOverlay>
           color: widget.targetColor,
           onPressed: () => FeatureDiscovery.completeCurrentStep(context),
           child: widget.tapTarget,
+          customChild: widget.customTapTarget,
         ),
       ],
     );
@@ -817,19 +834,21 @@ class _TapTarget extends StatelessWidget {
   final double transitionProgress;
   final Offset anchor;
   final Widget child;
+  final Widget customChild;
   final Color color;
   final VoidCallback onPressed;
 
   const _TapTarget({
     Key key,
-    @required this.anchor,
-    @required this.child,
+    this.child,
+    this.customChild,
+    @required this.anchor, 
     @required this.onPressed,
     @required this.color,
     @required this.state,
     @required this.transitionProgress,
   })  : assert(anchor != null),
-        assert(child != null),
+        assert(child != null || customChild != null),
         assert(state != null),
         assert(transitionProgress != null),
         assert(color != null),
@@ -880,11 +899,9 @@ class _TapTarget extends StatelessWidget {
   Widget build(BuildContext context) => CenterAbout(
         position: anchor,
         child: Container(
-          height: 2 * radius,
-          width: 2 * radius,
           child: Opacity(
             opacity: opacity,
-            child: RawMaterialButton(
+            child: customChild ?? RawMaterialButton(
               fillColor: color,
               shape: const CircleBorder(),
               child: child,
