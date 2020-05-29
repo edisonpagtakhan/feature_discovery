@@ -465,10 +465,7 @@ class _DescribedFeatureOverlayState extends State<DescribedFeatureOverlay>
   /// The value returned from here will be adjusted in [BackgroundContentLayoutDelegate]
   /// in order to match the transition progress and overlay state.
   double _backgroundRadius(Offset anchor) {
-    final isBackgroundCentered = _isCloseToTopOrBottom(anchor);
-    final backgroundRadius = min(_screenSize.width, _screenSize.height) *
-        (isBackgroundCentered ? 1.0 : 0.7);
-    return backgroundRadius;
+    return min(_screenSize.width, _screenSize.height);
   }
 
   Offset _backgroundPosition(Offset anchor, ContentLocation contentLocation) {
